@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Web Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            width: 100%;
+            height: 100%;
+        }
+
+        html, body {
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .login-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
+        .login-box {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            min-width: 400px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            margin-bottom: 30px;
+            font-size: 32px;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .form-group input::placeholder {
+            color: #888;
+        }
+
+        .btn-connect {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-connect:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-connect:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .disconnect-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background: #e74c3c;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            z-index: 100;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .disconnect-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .status {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 30px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 14px;
+            z-index: 100;
+        }
+
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="canvas"></canvas>
+        <div class="crosshair"></div>
+        <div id="loginScreen" class="login-screen">
+            <div class="login-box">
+                <h1>⛏️ Minecraft Web Client</h1>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Ник игрока</label>
+                        <input type="text" id="username" placeholder="Steve" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="host">IP адрес сервера</label>
+                        <input type="text" id="host" placeholder="mc.example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="port">Порт</label>
+                        <input type="number" id="port" value="25565">
+                    </div>
+
+                    <button type="submit" class="btn-connect">Подключиться</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="hud" class="hud" style="display:none;">
+            <div>Игрок: <span id="playerName">-</span></div>
+            <div>Сервер: <span id="serverInfo">-</span></div>
+            <div>Позиция: <span id="position">0, 0, 0</span></div>
+            <div>Здоровье: <span id="health">❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</span></div>
+            <div>Голод: <span id="food">🍗🍗🍗🍗🍗🍗🍗🍗🍗🍗</span></div>
+            <div>FPS: <span id="fps">0</span></div>
+        </div>
+
+        <button id="disconnectBtn" class="disconnect-btn" style="display:none;">Выход</button>
+        <div id="status" class="status" style="display:none;"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game state
+        const gameState = {
+            connected: false,
+            username: '',
+            host: '',
+            port: 25565,
+            position: { x: 0, y: 64, z: 0 },
+            rotation: { yaw: 0, pitch: 0 },
+            health: 20,
+            food: 20,
+            velocity: { x: 0, y: 0, z: 0 },
+            keys: {}
+        };
+
+        // Three.js setup
+        const canvas = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+
+        // Scene setup
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 150, 250);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(100, 100, 100);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.camera.left = -200;
+        directionalLight.shadow.camera.right = 200;
+        directionalLight.shadow.camera.top = 200;
+        directionalLight.shadow.camera.bottom = -200;
+        directionalLight.shadow.camera.far = 500;
+        scene.add(directionalLight);
+
+        // Create simple terrain
+        const terrainGroup = new THREE.Group();
+        const blockSize = 1;
+        const chunkSize = 16;
+        const chunksToLoad = 4; // 4x4 chunks
+
+        function createChunk(chunkX, chunkZ) {
+            for (let x = 0; x < chunkSize; x++) {
+                for (let z = 0; z < chunkSize; z++) {
+                    // Grass
+                    const grassGeometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+                    const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x4a9d3f });
+                    const grassBlock = new THREE.Mesh(grassGeometry, grassMaterial);
+                    grassBlock.position.set(
+                        chunkX * chunkSize * blockSize + x * blockSize,
+                        63,
+                        chunkZ * chunkSize * blockSize + z * blockSize
+                    );
+                    grassBlock.castShadow = true;
+                    grassBlock.receiveShadow = true;
+                    terrainGroup.add(grassBlock);
+
+                    // Dirt
+                    for (let y = 0; y < 3; y++) {
+                        const dirtGeometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+                        const dirtMaterial = new THREE.MeshStandardMaterial({ color: 0x8b6f47 });
+                        const dirtBlock = new THREE.Mesh(dirtGeometry, dirtMaterial);
+                        dirtBlock.position.set(
+                            chunkX * chunkSize * blockSize + x * blockSize,
+                            62 - y,
+                            chunkZ * chunkSize * blockSize + z * blockSize
+                        );
+                        dirtBlock.castShadow = true;
+                        dirtBlock.receiveShadow = true;
+                        terrainGroup.add(dirtBlock);
+                    }
+
+                    // Random trees
+                    if (Math.random() < 0.05) {
+                        // Tree trunk
+                        const trunkGeometry = new THREE.BoxGeometry(blockSize, 4 * blockSize, blockSize);
+                        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
+                        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                        trunk.position.set(
+                            chunkX * chunkSize * blockSize + x * blockSize,
+                            65,
+                            chunkZ * chunkSize * blockSize + z * blockSize
+                        );
+                        trunk.castShadow = true;
+                        trunk.receiveShadow = true;
+                        terrainGroup.add(trunk);
+
+                        // Tree leaves
+                        const leavesGeometry = new THREE.BoxGeometry(6 * blockSize, 5 * blockSize, 6 * blockSize);
+                        const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+                        const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                        leaves.position.set(
+                            chunkX * chunkSize * blockSize + x * blockSize,
+                            68,
+                            chunkZ * chunkSize * blockSize + z * blockSize
+                        );
+                        leaves.castShadow = true;
+                        leaves.receiveShadow = true;
+                        terrainGroup.add(leaves);
+                    }
+                }
+            }
+        }
+
+        // Load chunks
+        const centerChunk = -chunksToLoad / 2;
+        for (let cx = 0; cx < chunksToLoad; cx++) {
+            for (let cz = 0; cz < chunksToLoad; cz++) {
+                createChunk(
+                    centerChunk + cx,
+                    centerChunk + cz
+                );
+            }
+        }
+        scene.add(terrainGroup);
+
+        // Camera setup
+        camera.position.set(gameState.position.x, gameState.position.y + 1.6, gameState.position.z);
+        camera.lookAt(gameState.position.x, gameState.position.y, gameState.position.z);
+
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            gameState.keys[e.key.toLowerCase()] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            gameState.keys[e.key.toLowerCase()] = false;
+        });
+
+        // Mouse movement for camera rotation
+        let yaw = 0;
+        let pitch = 0;
+        document.addEventListener('mousemove', (e) => {
+            if (!gameState.connected) return;
+            
+            yaw += e.movementX * 0.005;
+            pitch -= e.movementY * 0.005;
+            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+        });
+
+        // Click to break/place blocks
+        document.addEventListener('click', (e) => {
+            if (!gameState.connected) return;
+            updateStatus('Block interaction would be sent to server');
+        });
+
+        document.addEventListener('contextmenu', (e) => {
+            if (gameState.connected) e.preventDefault();
+        });
+
+        // Login form handling
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const host = document.getElementById('host').value;
+            const port = parseInt(document.getElementById('port').value) || 25565;
+
+            if (!username || !host) {
+                alert('Пожалуйста, заполни все поля');
+                return;
+            }
+
+            connectToServer(username, host, port);
+        });
+
+        // Lock pointer on canvas click
+        canvas.addEventListener('click', () => {
+            if (gameState.connected) {
+                canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+                canvas.requestPointerLock();
+            }
+        });
+
+        // Disconnect button
+        document.getElementById('disconnectBtn').addEventListener('click', () => {
+            disconnect();
+        });
+
+        function connectToServer(username, host, port) {
+            gameState.username = username;
+            gameState.host = host;
+            gameState.port = port;
+            gameState.connected = true;
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('disconnectBtn').style.display = 'block';
+            document.getElementById('playerName').textContent = username;
+            document.getElementById('serverInfo').textContent = `${host}:${port}`;
+
+            updateStatus(`Подключено к ${host}:${port}`);
+            console.log('Connected to server:', host, port, 'as', username);
+        }
+
+        function disconnect() {
+            gameState.connected = false;
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('disconnectBtn').style.display = 'none';
+            document.getElementById('status').style.display = 'none';
+            updateStatus('');
+        }
+
+        function updateStatus(message) {
+            const statusDiv = document.getElementById('status');
+            if (message) {
+                statusDiv.textContent = message;
+                statusDiv.style.display = 'block';
+            } else {
+                statusDiv.style.display = 'none';
+            }
+        }
+
+        // Game loop
+        const clock = new THREE.Clock();
+        let frameCount = 0;
+        let lastFpsUpdate = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameState.connected) {
+                const delta = clock.getDelta();
+
+                // Movement
+                const moveSpeed = 0.2;
+                const pos = gameState.position;
+
+                if (gameState.keys['w']) pos.z -= moveSpeed;
+                if (gameState.keys['s']) pos.z += moveSpeed;
+                if (gameState.keys['a']) pos.x -= moveSpeed;
+                if (gameState.keys['d']) pos.x += moveSpeed;
+                if (gameState.keys[' ']) pos.y += moveSpeed;
+                if (gameState.keys['shift']) pos.y -= moveSpeed;
+
+                // Update camera position
+                camera.position.set(
+                    pos.x,
+                    pos.y + 1.6,
+                    pos.z
+                );
+
+                // Update camera rotation
+                const direction = new THREE.Vector3(
+                    Math.sin(yaw) * Math.cos(pitch),
+                    Math.sin(pitch),
+                    Math.cos(yaw) * Math.cos(pitch)
+                );
+                camera.lookAt(
+                    camera.position.x + direction.x,
+                    camera.position.y + direction.y,
+                    camera.position.z + direction.z
+                );
+
+                // Update HUD
+                document.getElementById('position').textContent =
+                    `${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)}`;
+
+                // FPS counter
+                frameCount++;
+                const now = performance.now();
+                if (now - lastFpsUpdate >= 1000) {
+                    document.getElementById('fps').textContent = frameCount;
+                    frameCount = 0;
+                    lastFpsUpdate = now;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
