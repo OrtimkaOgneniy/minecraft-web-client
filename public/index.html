@@ -1,161 +1,169 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 Minecraft Web Client</title>
+<html>
+  <head>
+    <title>Minecraft Web Client</title>
     <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+    <meta name="description" content="Minecraft web client running in your browser">
+    <meta name="theme-color" content="#349474">
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0'>
+  </head>
+  <body>
+    <div id="ui-root">
+      <!-- Game Canvas -->
+      <canvas id="gameCanvas"></canvas>
+      
+      <!-- Title Screen -->
+      <div id="title-screen" class="screen active">
+        <div class="dirt-bg"></div>
         
-        <!-- Main Menu Screen -->
-        <div id="mainMenu" class="screen active">
-            <div class="menu-background"></div>
-            <div class="menu-content">
-                <div class="title">
-                    <div class="minecraft-title">Minecraft</div>
-                    <div class="subtitle">Web Client Edition</div>
-                </div>
-                
-                <div class="menu-buttons">
-                    <button class="menu-btn" id="playBtn">
-                        <span class="btn-text">Singleplayer</span>
-                    </button>
-                    <button class="menu-btn" id="multiplayerBtn">
-                        <span class="btn-text">Multiplayer</span>
-                    </button>
-                    <button class="menu-btn" id="settingsBtn">
-                        <span class="btn-text">Options</span>
-                    </button>
-                </div>
+        <div class="minecraft">
+          <div class="minec"></div>
+          <div class="raft"></div>
+          <div class="edition"></div>
+          <span class="splash">Respek Server Edition</span>
+        </div>
+
+        <div class="menu">
+          <button class="menu-btn" id="playBtn">Play</button>
+          <button class="menu-btn" id="settingsBtn">Options</button>
+          <div class="menu-row">
+            <button class="menu-btn half" id="githubBtn">GitHub</button>
+            <button class="menu-btn half" id="discordBtn">Discord</button>
+          </div>
+        </div>
+
+        <div class="bottom-info">
+          <span>Minecraft Web Client</span>
+          <span>Play on Respek Server!</span>
+        </div>
+      </div>
+
+      <!-- Play Screen (Server Selection) -->
+      <div id="play-screen" class="screen" style="display: none;">
+        <div class="dirt-bg"></div>
+        
+        <p class="title">Join Respek Server</p>
+
+        <main class="edit-boxes">
+          <div class="wrapper">
+            <div class="edit-box">
+              <label>Player Name</label>
+              <input type="text" id="username" placeholder="Steve" maxlength="16">
             </div>
+          </div>
+          
+          <div class="server-info-box">
+            <div class="info-item">
+              <span class="info-label">Server:</span>
+              <span class="info-value">Respek.aternos.me</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Port:</span>
+              <span class="info-value">58389</span>
+            </div>
+          </div>
+          
+          <div id="connectError" class="error-message" style="display:none;"></div>
+          <div id="connectStatus" class="connect-status" style="display:none;"></div>
+        </main>
+
+        <div class="button-wrapper">
+          <button class="menu-btn" id="connectBtn" style="width: 150px;">Connect</button>
+          <button class="menu-btn" id="backBtn" style="width: 150px;">Cancel</button>
+        </div>
+      </div>
+
+      <!-- In-Game HUD -->
+      <div id="hud" class="hud" style="display: none;">
+        <!-- Top Left Info -->
+        <div class="hud-top-left">
+          <div class="hud-item">
+            <span class="label">Position:</span>
+            <span class="value">X: <span id="posX">0</span></span>
+          </div>
+          <div class="hud-item">
+            <span class="label"></span>
+            <span class="value">Y: <span id="posY">0</span></span>
+          </div>
+          <div class="hud-item">
+            <span class="label"></span>
+            <span class="value">Z: <span id="posZ">0</span></span>
+          </div>
+          <div class="hud-item">
+            <span class="label">FPS:</span>
+            <span class="value"><span id="fps">0</span></span>
+          </div>
         </div>
         
-        <!-- Multiplayer Screen -->
-        <div id="multiplayerScreen" class="screen">
-            <div class="menu-background"></div>
-            <div class="menu-content">
-                <h1 class="screen-title">Select Server</h1>
-                
-                <div class="server-list">
-                    <div class="server-item active" data-server="respek">
-                        <div class="server-name">Respek Server</div>
-                        <div class="server-status">Respek.aternos.me:58389</div>
-                    </div>
-                </div>
-                
-                <div class="connect-form">
-                    <div class="form-group">
-                        <label for="username">Player Name</label>
-                        <input type="text" id="username" placeholder="Steve" maxlength="16">
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button class="menu-btn" id="connectBtn">
-                            <span class="btn-text">Connect</span>
-                        </button>
-                        <button class="menu-btn" id="backBtn">
-                            <span class="btn-text">Back</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="connectError" class="error-message" style="display:none;"></div>
-                <div id="connectStatus" class="connect-status" style="display:none;"></div>
-            </div>
+        <!-- Center - Crosshair -->
+        <div class="hud-center">
+          <div class="crosshair">
+            <div class="crosshair-h"></div>
+            <div class="crosshair-v"></div>
+            <div class="crosshair-dot"></div>
+          </div>
         </div>
         
-        <!-- Game HUD -->
-        <div id="gameHUD" class="hud">
-            <!-- Top Left Info -->
-            <div class="hud-top-left">
-                <div class="hud-item">
-                    <span class="label">Position:</span>
-                    <span class="value">X: <span id="posX">0</span> Y: <span id="posY">0</span> Z: <span id="posZ">0</span></span>
-                </div>
-                <div class="hud-item">
-                    <span class="label">FPS:</span>
-                    <span class="value"><span id="fps">0</span></span>
-                </div>
+        <!-- Bottom Right - Hotbar and Health -->
+        <div class="hud-bottom-right">
+          <div class="hotbar">
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot active"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+          </div>
+          
+          <div class="status-bar">
+            <div class="health-bar">
+              <div class="health-fill" id="healthFill"></div>
             </div>
-            
-            <!-- Center - Crosshair -->
-            <div class="hud-center">
-                <div class="crosshair">
-                    <div class="crosshair-h"></div>
-                    <div class="crosshair-v"></div>
-                    <div class="crosshair-dot"></div>
-                </div>
-            </div>
-            
-            <!-- Bottom Right - Hotbar and Info -->
-            <div class="hud-bottom-right">
-                <div class="hotbar">
-                    <div class="hotbar-slot"></div>
-                    <div class="hotbar-slot active"></div>
-                    <div class="hotbar-slot"></div>
-                    <div class="hotbar-slot"></div>
-                    <div class="hotbar-slot"></div>
-                    <div class="hotbar-slot"></div>
-                    <div class="hotbar-slot"></div>
-                    <div class="hotbar-slot"></div>
-                    <div class="hotbar-slot"></div>
-                </div>
-                
-                <div class="status-bar">
-                    <div class="health-bar">
-                        <div class="health-fill" id="healthFill"></div>
-                    </div>
-                    <span class="health-text" id="healthText">❤️ 20/20</span>
-                </div>
-                
-                <div class="food-bar">
-                    <div class="food-fill" id="foodFill"></div>
-                </div>
-                <span class="food-text" id="foodText">🍗 20/20</span>
-            </div>
-            
-            <!-- Bottom Left - Server Info -->
-            <div class="hud-bottom-left">
-                <div class="server-info">
-                    <div class="server-name-hud" id="serverNameHud">Respek Server</div>
-                    <div class="player-name-hud" id="playerNameHud">Player</div>
-                    <div class="server-ip-hud">Respek.aternos.me:58389</div>
-                </div>
-            </div>
-            
-            <!-- Pause Menu Button -->
-            <button class="pause-btn" id="pauseBtn" title="ESC to Pause">⏸</button>
+            <span class="health-text" id="healthText">❤️ 20/20</span>
+          </div>
+          
+          <div class="food-bar">
+            <div class="food-fill" id="foodFill"></div>
+          </div>
+          <span class="food-text" id="foodText">🍗 20/20</span>
         </div>
         
-        <!-- Pause Menu -->
-        <div id="pauseMenu" class="screen">
-            <div class="pause-overlay"></div>
-            <div class="pause-content">
-                <h1 class="pause-title">Game Menu</h1>
-                <div class="pause-buttons">
-                    <button class="menu-btn" id="resumeBtn">
-                        <span class="btn-text">Back to Game</span>
-                    </button>
-                    <button class="menu-btn" id="disconnectPauseBtn">
-                        <span class="btn-text">Disconnect</span>
-                    </button>
-                    <button class="menu-btn" id="quitBtn">
-                        <span class="btn-text">Quit to Menu</span>
-                    </button>
-                </div>
-            </div>
+        <!-- Bottom Left - Server Info -->
+        <div class="hud-bottom-left">
+          <div class="server-info">
+            <div class="player-name-hud" id="playerNameHud">Player</div>
+            <div class="server-name-hud">Respek Server</div>
+            <div class="server-ip-hud">Respek.aternos.me:58389</div>
+          </div>
         </div>
         
-        <!-- Server Status Notification -->
-        <div id="serverNotification" class="notification">
-            <div class="notification-content" id="notificationContent"></div>
+        <!-- Pause Button -->
+        <button class="pause-btn" id="pauseBtn" title="ESC to Pause">⏸</button>
+      </div>
+
+      <!-- Pause Menu -->
+      <div id="pause-screen" class="screen" style="display: none;">
+        <div class="pause-overlay"></div>
+        <div class="pause-content">
+          <p class="pause-title">Game Menu</p>
+          <div class="pause-buttons">
+            <button class="menu-btn" id="resumeBtn" style="width: 200px;">Back to Game</button>
+            <button class="menu-btn" id="disconnectBtn" style="width: 200px;">Disconnect</button>
+            <button class="menu-btn" id="quitBtn" style="width: 200px;">Quit to Menu</button>
+          </div>
         </div>
+      </div>
+
+      <!-- Server Notification -->
+      <div id="server-notification" class="notification">
+        <div class="notification-content" id="notificationContent"></div>
+      </div>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="game.js"></script>
-</body>
+  </body>
 </html>
